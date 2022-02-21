@@ -3,61 +3,91 @@
 # Colin Millar, modified from Iago Mosqueira and Ernesto Jardim
 
 # This script shows the steps followed to fit a stock-recruitment model to
-# in the file 'north_sea_herring_SR.csv'
+# in the file 'north_sea_haddock_SR.csv'
 
 # ==============================================================================
 # First a short deviation!
 # ==============================================================================
 
-#install.packages("icesVocab")
+# install.packages("icesVocab")
+# install.packages("icesSD")
+# install.packages("icesSAG")
 library(icesVocab)
+library(icesSD)
+library(icesSAG)
 ?icesVocab
 
-findCode("species", "herring", full = TRUE, regex = TRUE)
+# look up the vocabulary database for haddock
+stockcodes <- getCodeList("ICES_StockCode")
+head(stockcodes)
 
-findCode("stock", "herring", full = TRUE, regex = TRUE)
+# helper function
+findCode("stock", "haddock", full = TRUE, regex = TRUE)
 
-getCodeDetail("ICES_StockCode", "her.27.3a47d")
+getCodeDetail("ICES_StockCode", "had.27.46a20")
+
+# look up the stock database for haddock
+had_info <- getSD(stock = "had.27.46a20", year = 2021)
+print(t(had_info), quote = FALSE)
+
+# stock assessment results for haddock
+had_key <- icesSAG::findAssessmentKey("had.27.46a20", year = 2021)
+browseURL(paste0("https://standardgraphs.ices.dk/ViewCharts.aspx?key=", had_key))
+
+had_summary <- getSummaryTable(had_key)[[1]]
+had_summary
+
+# extract SR data
+had_sr <- had_summary[c("Year", "SSB", "recruitment")]
+had_sr
+
+names(had_sr) <- c("yc", "ssb", "rec")
+had_sr$ssb <- had_sr$ssb / 1000
+had_sr$rec <- had_sr$rec / 1000
+
+head(had_sr)
+
+
 
 #==============================================================================
 # Load and explore data
 #==============================================================================
 
 # load data from comma-separated file to data.frame
-herring <- read.csv(file = "02_Model_fitting/north_sea_herring_SR.csv", header = TRUE)
+haddock <- read.csv(file = "02_Model_fitting/north_sea_haddock_SR.csv", header = TRUE)
 
 # take a look at what we have
-head(herring) # this looks at the first 6 rows
-str(herring) # this lets us inspect what the columns contain
+head(haddock) # this looks at the first 6 rows
+str(haddock) # this lets us inspect what the columns contain
 
 # lets rename some columns because I am lazy and want the code to be
 # readable and easier to type
-names(herring)
-names(herring) <- c("yc", "ssb", "rec")
-head(herring)
+names(haddock)
+names(haddock) <- c("yc", "ssb", "rec")
+head(haddock)
 
 # to access the diffrent columns use '$' i.e to see the SSB values:
-herring$ssb
+haddock$ssb
 # and to see observed recruitment
-herring$rec
+haddock$rec
 
 # initial plot of SSB vs. recruits
 plot(
   rec ~ ssb,
-  data = herring, # look in herring for x and y values
-  xlab = "SSB (tonnes)",
-  ylab = "Recruits at age 0 (thousands)"
+  data = haddock, # look in haddock for x and y values
+  xlab = "SSB (thousand tonnes)",
+  ylab = "Recruits at age 0 (millions)"
 )
 
 
 # probably better to set x and y limits to start at zero
 plot(
   rec ~ ssb,
-  data = herring, # look in herring for x and y values
+  data = haddock, # look in haddock for x and y values
   xlim = c(0, max(ssb)), # set x limits
   ylim = c(0, max(rec)), # set y limits
-  xlab = "SSB (tonnes)",
-  ylab = "Recruits at age 0 (thousands)"
+  xlab = "SSB (thousand tonnes)",
+  ylab = "Recruits at age 0 (millions)"
 )
 
 
@@ -81,7 +111,7 @@ a <- 1
 b <- 1
 
 # set up the other variables (i.e. S)
-S <- herring$ssb
+S <- haddock$ssb
 
 Rpred <- a * S / (b + S)
 
@@ -90,7 +120,7 @@ Rpred <- a * S / (b + S)
 #------------------------------------------------------------------------------
 
 # assign observed recruitment
-Robs <- herring$rec
+Robs <- haddock$rec
 
 resids <- log(Robs / Rpred) # = log(Robs) - log(Rpred)
 
@@ -251,7 +281,7 @@ bevholt <- function(b, S) {
 }
 
 # compute R at the starting values for b1 and b2
-Rpred <- bevholt(c(1, 1), S = herring$ssb)
+Rpred <- bevholt(c(1, 1), S = haddock$ssb)
 
 # lets jump to step 4 ...
 
@@ -276,9 +306,9 @@ ssq <- function(b, S, Robs) {
 }
 
 # lets test this out:
-ssq(c(a, b), herring$ssb, herring$rec) # what to you notice this time?
-ssq(c(1, 1), herring$ssb, herring$rec)
-ssq(c(2, 2), herring$ssb, herring$rec)
+ssq(c(a, b), haddock$ssb, haddock$rec) # what to you notice this time?
+ssq(c(1, 1), haddock$ssb, haddock$rec)
+ssq(c(2, 2), haddock$ssb, haddock$rec)
 
 # now we need to search over lots of values for b1 and b2 to
 # find the minimum.
@@ -293,17 +323,17 @@ ssq_optim <- function(par, S, Robs) {
 par0 <- log(c(1, 1))
 
 # lets test the new ssq funciton
-ssq_optim(par0, S = herring$ssb, Robs = herring$rec)
+ssq_optim(par0, S = haddock$ssb, Robs = haddock$rec)
 
 # lets run it..
-opt <- optim(par0, ssq_optim, S = herring$ssb, Robs = herring$rec)
+opt <- optim(par0, ssq_optim, S = haddock$ssb, Robs = haddock$rec)
 
 opt
 
 # the fit is not quite there yet, so lets try better starting values.
 # this highlights the presence of multiple 'local' minima
 par0 <- c(20, 5)
-opt <- optim(par0, ssq_optim, S = herring$ssb, Robs = herring$rec)
+opt <- optim(par0, ssq_optim, S = haddock$ssb, Robs = haddock$rec)
 
 opt
 
@@ -313,13 +343,13 @@ opt
 #------------------------------------------------------------------------------
 
 # predict recruitment over the full S range
-Spred <- seq(0, max(herring$ssb), length.out = 100)
+Spred <- seq(0, max(haddock$ssb), length.out = 100)
 Rpred <- bevholt(exp(opt$par), S = Spred)
 
 # plot
 plot(
   rec ~ ssb,
-  data = herring, # pass in data this time
+  data = haddock, # pass in data this time
   xlim = c(0, max(S)), # set x limits
   ylim = c(0, max(Robs)), # set y limits
   xlab = "Spawning Stock Biomass (tonnes)",
@@ -358,11 +388,11 @@ lines(Rpred ~ Spred, col = "red", pch = 2)
 # this can be seen from the residuals:
 
 # lets run the fit again
-fit <- optim(par0, ssq_optim, S = herring$ssb, Robs = herring$rec)
+fit <- optim(par0, ssq_optim, S = haddock$ssb, Robs = haddock$rec)
 
 # and calculate the residuals
-Rpred <- bevholt(exp(fit$par), herring$ssb)
-resids <- log( herring$rec / Rpred)
+Rpred <- bevholt(exp(fit$par), haddock$ssb)
+resids <- log( haddock$rec / Rpred)
 
 # and plot a histogram
 hist(resids, nclass = 20)
@@ -398,12 +428,12 @@ hist(rmean_star)
 # resample from the residuals as if the resuduals are random and reestimate the
 # parameters
 r_star <- sample(resids, replace = TRUE)
-opt <- optim(par0, ssq_optim, S = herring$ssb, Robs = Rpred + r_star)
+opt <- optim(par0, ssq_optim, S = haddock$ssb, Robs = Rpred + r_star)
 opt$par
 
 # do it again
 r_star <- sample(resids, replace = TRUE)
-opt <- optim(par0, ssq_optim, S = herring$ssb, Robs = Rpred + r_star)
+opt <- optim(par0, ssq_optim, S = haddock$ssb, Robs = Rpred + r_star)
 opt$par
 
 
@@ -411,7 +441,7 @@ opt$par
 par_star <-
   replicate(10000, {
     r_star <- sample(resids, replace = TRUE)
-    opt <- optim(par0, ssq_optim, S = herring$ssb, Robs = Rpred * exp(r_star),
+    opt <- optim(par0, ssq_optim, S = haddock$ssb, Robs = Rpred * exp(r_star),
                  method = "BFGS")
     opt$par
   })
@@ -442,7 +472,7 @@ points(fit$par[1], fit$par[2], pch = 16, col = "blue")
 
 # plot
 # predict recruitment over the full S range
-Spred <- seq(0, max(herring$ssb), length.out = 100)
+Spred <- seq(0, max(haddock$ssb), length.out = 100)
 Rpred <- apply(par_star, 2, function(x) bevholt(exp(x), S = Spred))
 
 # plot a few curves to see the uncertainty in the relationship
@@ -453,7 +483,7 @@ matplot(Spred, Rpred[, sample(1:ncol(Rpred), 100)], type = "l", lty = 1, col = g
         ylab = 'Age-0 Recruitment',
         main = "boostraped error in stock recruitment relationship")
 # add the data
-points(herring$ssb, herring$rec, type = "b", pch = 16, col = "red")
+points(haddock$ssb, haddock$rec, type = "b", pch = 16, col = "red")
 
 
 
@@ -470,35 +500,35 @@ points(herring$ssb, herring$rec, type = "b", pch = 16, col = "red")
 # ==============================================================================
 
 # for plotting lets order the SR data
-herring_ord <- herring[order(herring$ssb),]
+haddock_ord <- haddock[order(haddock$ssb),]
 
 # mean
-mean_fit <- glm(rec ~ 1, data = herring_ord)
+mean_fit <- glm(rec ~ 1, data = haddock_ord)
 
-plot(herring_ord$ssb, herring_ord$rec)
-lines(herring_ord$ssb, fitted(mean_fit), col = "red", lwd = 2)
+plot(haddock_ord$ssb, haddock_ord$rec)
+lines(haddock_ord$ssb, fitted(mean_fit), col = "red", lwd = 2)
 
 # linear 1
-linear1_fit <- glm(rec ~ ssb - 1, data = herring_ord)
+linear1_fit <- glm(rec ~ ssb - 1, data = haddock_ord)
 
-plot(herring_ord$ssb, herring_ord$rec)
-lines(herring_ord$ssb, fitted(linear1_fit), col = "red", lwd = 2)
+plot(haddock_ord$ssb, haddock_ord$rec)
+lines(haddock_ord$ssb, fitted(linear1_fit), col = "red", lwd = 2)
 
 # linear 2
-linear2_fit <- glm(rec ~ ssb, data = herring_ord)
+linear2_fit <- glm(rec ~ ssb, data = haddock_ord)
 
-plot(herring_ord$ssb, herring_ord$rec)
-lines(herring_ord$ssb, fitted(linear2_fit), col = "red", lwd = 2)
+plot(haddock_ord$ssb, haddock_ord$rec)
+lines(haddock_ord$ssb, fitted(linear2_fit), col = "red", lwd = 2)
 
 
 # log transformed ricker
 # R = a S exp(-bS)
 # =>  log R = log(a) -bS + log(S)
 
-ricker_fit <- glm(rec ~ ssb, offset = log(ssb), data = herring_ord, family = Gamma(log))
+ricker_fit <- glm(rec ~ ssb, offset = log(ssb), data = haddock_ord, family = Gamma(log))
 
-plot(herring_ord$ssb, herring_ord$rec)
-lines(herring_ord$ssb, fitted(ricker_fit), col = "red", lwd = 2)
+plot(haddock_ord$ssb, haddock_ord$rec)
+lines(haddock_ord$ssb, fitted(ricker_fit), col = "red", lwd = 2)
 
 # inverse transformed beverton holt
 # R = a S / (b + S)
@@ -506,20 +536,20 @@ lines(herring_ord$ssb, fitted(ricker_fit), col = "red", lwd = 2)
 # =>        = b / (aS) + S / (aS)
 # =>        = b/a * 1/S + 1 / a
 
-bh_fit <- glm(rec ~ I(1 / ssb), data = herring_ord, family = Gamma(inverse))
+bh_fit <- glm(rec ~ I(1 / ssb), data = haddock_ord, family = Gamma(inverse))
 
-plot(herring_ord$ssb, herring_ord$rec)
-lines(herring_ord$ssb, fitted(bh_fit), col = "red", lwd = 2)
+plot(haddock_ord$ssb, haddock_ord$rec)
+lines(haddock_ord$ssb, fitted(bh_fit), col = "red", lwd = 2)
 
 
 
 # all of 'em
-plot(herring_ord$ssb, herring_ord$rec)
-lines(herring_ord$ssb, fitted(mean_fit), col = "red", lwd = 2)
-lines(herring_ord$ssb, fitted(linear1_fit), col = "blue", lwd = 2)
-lines(herring_ord$ssb, fitted(linear2_fit), col = "lightblue", lwd = 2)
-lines(herring_ord$ssb, fitted(ricker_fit), col = "seagreen", lwd = 2)
-lines(herring_ord$ssb, fitted(bh_fit), col = "orange", lwd = 2)
+plot(haddock_ord$ssb, haddock_ord$rec)
+lines(haddock_ord$ssb, fitted(mean_fit), col = "red", lwd = 2)
+lines(haddock_ord$ssb, fitted(linear1_fit), col = "blue", lwd = 2)
+lines(haddock_ord$ssb, fitted(linear2_fit), col = "lightblue", lwd = 2)
+lines(haddock_ord$ssb, fitted(ricker_fit), col = "seagreen", lwd = 2)
+lines(haddock_ord$ssb, fitted(bh_fit), col = "orange", lwd = 2)
 
 
 # I can add code for confidence intervals if that would be helpful?
