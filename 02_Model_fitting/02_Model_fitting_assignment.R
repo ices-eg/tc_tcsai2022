@@ -3,7 +3,7 @@
 # Colin Millar, modified from Iago Mosqueira and Ernesto Jardim
 
 # This script shows the steps followed to fit a stock-recruitment model to
-# in the file 'north_sea_haddock_SR.csv'
+# in the file 'northern_shelf_haddock_SR.csv'
 
 # ==============================================================================
 # First a short deviation!
@@ -54,7 +54,7 @@ head(had_sr)
 #==============================================================================
 
 # load data from comma-separated file to data.frame
-haddock <- read.csv(file = "02_Model_fitting/north_sea_haddock_SR.csv", header = TRUE)
+haddock <- read.csv(file = "02_Model_fitting/northern_shelf_haddock_SR.csv", header = TRUE)
 
 # take a look at what we have
 head(haddock) # this looks at the first 6 rows
