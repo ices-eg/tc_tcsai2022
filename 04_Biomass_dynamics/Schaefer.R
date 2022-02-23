@@ -1,5 +1,4 @@
-Schaefer <- function(par, data, verbose=FALSE)
-{
+Schaefer <- function(par, data, verbose = FALSE) {
   r <- exp(par[["logr"]])
   K <- exp(par[["logK"]])
   Binit <- exp(par[["logBinit"]])
@@ -10,43 +9,96 @@ Schaefer <- function(par, data, verbose=FALSE)
   n <- length(year)
   B <- numeric(n)
   B[1] <- Binit
-  for(i in 1:(n-1))
+  for (i in 1:(n - 1))
   {
-    B[i+1] <- max(B[i] + r*B[i]*(1-B[i]/K) - C[i], 1e-4)
+    B[i + 1] <- max(B[i] + r * B[i] * (1 - B[i] / K) - C[i], 1e-4)
   }
   Ifit <- q * B
 
   res <- log(I) - log(Ifit) # log(I / Ifit)
   RSS <- sum(res^2)
 
-  pars <- c(r=r, K=K, Binit=Binit, q=q)
-  refpts <- c(HRmsy=0.5*r, Bmsy=0.5*K, MSY=0.25*r*K)
+  pars <- c(r = r, K = K, Binit = Binit, q = q)
+  refpts <- c(HRmsy = 0.5 * r, Bmsy = 0.5 * K, MSY = 0.25 * r * K)
 
-  if(verbose)
-    list(B=B, HR=C/B, Ifit=Ifit, res=res, pars=pars, refpts=refpts, RSS=RSS)
-  else
+  if (verbose) {
+    list(B = B, HR = C / B, Ifit = Ifit, res = res, pars = pars, refpts = refpts, RSS = RSS)
+  } else {
     RSS
+  }
 }
 
 plot_shaefer <- function(fit, data, main) {
-  par(mfrow=c(2,2))
+  par(mfrow = c(2, 2))
 
-  plot(data$Year, fit$Ifit, ylim=c(0,max(fit$Ifit)), type="l", lwd=4,
-       col="gray", xlab="Year", ylab="Biomass index",
-       main=paste0(main, ": Fit to data"))
+  plot(data$Year, fit$Ifit,
+    ylim = c(0, max(fit$Ifit)), type = "l", lwd = 4,
+    col = "gray", xlab = "Year", ylab = "Biomass index",
+    main = paste0(main, ": Fit to data")
+  )
   points(Index ~ Year, data)
 
-  plot(data$Year, fit$B, type="l", ylim=c(0, max(fit$B)), lwd=2,
-       xlab="Year", ylab="Biomass and catch", main=paste0(main, ": Biomass and catch"))
-  points(Catch~Year, data, type="h", lwd=6)
+  plot(data$Year, fit$B,
+    type = "l", ylim = c(0, max(fit$B)), lwd = 2,
+    xlab = "Year", ylab = "Biomass and catch", main = paste0(main, ": Biomass and catch")
+  )
+  points(Catch ~ Year, data, type = "h", lwd = 6)
 
-  plot(data$Year, fit$HR, ylim=c(0, max(fit$HR)), type="l",
-       lwd=2, xlab="Year", ylab="Harvest rate", main=paste0(main, ": Harvest rate"))
+  plot(data$Year, fit$HR,
+    ylim = c(0, max(fit$HR)), type = "l",
+    lwd = 2, xlab = "Year", ylab = "Harvest rate", main = paste0(main, ": Harvest rate")
+  )
 
-  plot(data$Year, fit$res, xlab = "Year", ylab = "log residuals",
-    main=paste0(main, ": Residuals"))
+  plot(data$Year, fit$res,
+    xlab = "Year", ylab = "log residuals",
+    main = paste0(main, ": Residuals")
+  )
   abline(h = 0)
 }
+
+################################################################################
+## Norther Shelf Haddock
+
+
+haddock <- read.csv("04_Biomass_dynamics/haddock.csv", header=TRUE)
+init <-
+  c(
+    logr = log(1.000),
+    logK = log(8 * mean(haddock$Catch)),
+    logBinit = log(4 * mean(haddock$Catch)),
+    logq = log(haddock$Index[1] / (4 * mean(haddock$Catch)))
+  )
+
+Schaefer(par = init, haddock)
+opt <- optim(init, Schaefer, data = haddock)
+opt
+fit <- Schaefer(opt$par, haddock, verbose = TRUE)
+exp(opt$par)
+
+plot_shaefer(fit, haddock, main = "Haddock")
+
+fit$pars
+fit$refpts
+
+
+
+# different initial values?
+init2 <-
+  c(
+    logr = log(1),
+    logK = log(950),
+    logBinit = log(500),
+    logq = log(3)
+  )
+
+opt2 <- nlminb(init2, Schaefer, data = haddock, control = list(eval.max = 1e6, iter.max = 1e6))
+opt2
+
+fit2 <- Schaefer(opt2$par, haddock, verbose = TRUE)
+plot_shaefer(fit2, haddock, main = "Haddock")
+
+
+
 
 ################################################################################
 ## South Atlantic albacore
