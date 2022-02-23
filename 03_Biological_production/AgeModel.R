@@ -107,7 +107,13 @@ for(t in 1:(Tmax-1))
 
 round(N, 3)
 
-SR <- data.frame(year, SSB=colSums(SSB), Rec=N[1,])
+rec_age <- 1
+SR <-
+  data.frame(
+    year = year[1:(Tmax - rec_age)],
+    SSB = colSums(SSB)[1:(Tmax - rec_age)],
+    Rec = N[1, (rec_age+1):Tmax]
+  )
 
 SSB.curve <- seq(0, 15000, by=500)
 Rec.curve <- (alpha*SSB.curve) / (beta+SSB.curve)
