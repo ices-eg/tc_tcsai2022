@@ -3,7 +3,8 @@
 #' Run simple VPA model, with no tuning index.
 #'
 #' @param C catch-at-age matrix.
-#' @param Mvec natural mortality rate, a scalar.
+#' @param Mvec natural mortality rate, a either a scaler or a vector of same
+#'        length as the number of ages.
 #' @param Fterm terminal F, either a scalar or a vector of same length as the
 #'        number of ages.
 #' @param Fages number of ages to calculate F for oldest age. For example, if
