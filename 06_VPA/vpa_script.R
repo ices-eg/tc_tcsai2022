@@ -7,7 +7,7 @@ Year <- as.numeric(row.names(catch))
 catch <- cbind(catch[, 1:5], rowSums(catch[, -(1:5)]))
 
 ## Run model
-model <- vpa(catch, M=0.2, Fterm=0.1, Fages=3)
+model <- vpa(catch, Mvec = c(rep(0.1, 2), rep(0.3, 4)), Fterm = 0.1, Fages = 3)
 
 ## View results
 par(mfrow=c(2,2))

@@ -3,7 +3,7 @@
 #' Run simple VPA model, with no tuning index.
 #'
 #' @param C catch-at-age matrix.
-#' @param M natural mortality rate, a scalar.
+#' @param Mvec natural mortality rate, a scalar.
 #' @param Fterm terminal F, either a scalar or a vector of same length as the
 #'        number of ages.
 #' @param Fages number of ages to calculate F for oldest age. For example, if
@@ -17,13 +17,16 @@
 #'
 #' @export
 
-vpa <- function(C, M, Fterm, Fages)
+vpa <- function(C, Mvec, Fterm, Fages)
 {
   ## Prepare matrices
   C <- as.matrix(C)
   T <- nrow(C)
   A <- ncol(C)
   N <- F <- Z <- matrix(NA_real_, nrow=T, ncol=A, dimnames=dimnames(C))
+
+  ## create M matrix
+  M <- matrix(Mvec, nrow = T, ncol = A, byrow = TRUE, dimnames = dimnames(catch))
 
   ## Set F in terminal year
   F[T,] <- Fterm
@@ -38,11 +41,11 @@ vpa <- function(C, M, Fterm, Fages)
   {
     for(a in 1:(A-1))
     {
-      N[t,a] <- N[t+1,a+1] * exp(M) + C[t,a] * exp(M/2)
-      F[t,a] <- log(N[t,a] / N[t+1,a+1]) - M
+      N[t, a] <- N[t + 1, a + 1] * exp(M[t, a]) + C[t, a] * exp(M[t, a] / 2)
+      F[t, a] <- log(N[t, a] / N[t + 1, a + 1]) - M[t, a]
     }
     F[t,A] <- mean(F[t,A-(1:Fages)])
-    Z[t,] <- F[t,] + M
+    Z[t, ] <- F[t, ] + M[t, ]
     N[t,A] <- C[t,A]*Z[t,A] / (F[t,A]*(1-exp(-Z[t,A])))
   }
 

@@ -7,6 +7,7 @@ catch <-
       row.names = 1
     )
   ) / 1000
+
 nyears <- nrow(catch)
 nages <- ncol(catch)
 
@@ -32,7 +33,7 @@ for(y in (nyears-1):1)
     F[y, a] <- log(N[y, a] / N[y + 1, a + 1]) - M[y, a]
   }
   F[y, nages] <- mean(F[y, nages-(1:3)])
-  Z[y, ] <- F[y, ] + M[y, a]
+  Z[y, ] <- F[y, ] + M[y, ]
   N[y, nages] <-
     catch[y, nages] * Z[y, nages] / (F[y, nages] * (1 - exp(-Z[y, nages])))
 
