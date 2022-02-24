@@ -4,12 +4,8 @@ source("06_VPA/vpa_function.R")
 catch <- read.csv("06_VPA/cod_catch.csv", header = TRUE, check.names = FALSE, row.names = 1)
 Year <- as.numeric(row.names(catch))
 
-# demonsrate, that we can create our own plus group if we want (age 6+)
-catch <- cbind(catch[, 1:5], rowSums(catch[, -(1:5)]))
-colnames(catch)[6] <- "6+"
-
 ## Run model
-model <- vpa(catch, Mvec = c(rep(0.1, 2), rep(0.3, 4)), Fterm = 0.1, Fages = 3)
+model <- vpa(catch, Mvec = c(rep(0.1, 2), rep(0.3, 8)), Fterm = 0.1, Fages = 3)
 
 ## View results
 par(mfrow=c(2,2))
@@ -35,9 +31,6 @@ plot(Year, Fbar, ylim=c(0, max(Fbar)), main="Mean F ages 1-10",
 ## Read weigths and maturity at age
 wt <- read.csv("06_VPA/cod_weights.csv", header = TRUE, check.names = FALSE, row.names = 1)
 mat <- read.csv("06_VPA/cod_maturity.csv", header = TRUE, check.names = FALSE, row.names = 1)
-
-wt <- wt[, 1:6]
-mat <- mat[, 1:6]
 
 ssb <- rowSums(model$N * wt * mat) / 1000
 plot(Year, ssb, ylim = c(0, max(ssb)), main="Spawning stock biomass (SSB)",
