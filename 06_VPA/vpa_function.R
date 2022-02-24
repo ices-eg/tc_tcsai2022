@@ -27,7 +27,7 @@ vpa <- function(C, Mvec, Fterm, Fages)
   N <- F <- Z <- matrix(NA_real_, nrow=T, ncol=A, dimnames=dimnames(C))
 
   ## create M matrix
-  M <- matrix(Mvec, nrow = T, ncol = A, byrow = TRUE, dimnames = dimnames(catch))
+  M <- matrix(Mvec, nrow = T, ncol = A, byrow = TRUE, dimnames = dimnames(C))
 
   ## Set F in terminal year
   F[T,] <- Fterm
