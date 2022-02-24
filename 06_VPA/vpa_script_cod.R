@@ -4,7 +4,9 @@ source("06_VPA/vpa_function.R")
 catch <- read.csv("06_VPA/cod_catch.csv", header = TRUE, check.names = FALSE, row.names = 1)
 Year <- as.numeric(row.names(catch))
 
+# demonsrate, that we can create our own plus group if we want (age 6+)
 catch <- cbind(catch[, 1:5], rowSums(catch[, -(1:5)]))
+colnames(catch)[6] <- "6+"
 
 ## Run model
 model <- vpa(catch, Mvec = c(rep(0.1, 2), rep(0.3, 4)), Fterm = 0.1, Fages = 3)
