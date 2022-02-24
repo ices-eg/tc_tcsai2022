@@ -1,13 +1,20 @@
 Schaefer <- function(par, data, verbose = FALSE) {
+  # extract parameters
   r <- exp(par[["logr"]])
   K <- exp(par[["logK"]])
   Binit <- exp(par[["logBinit"]])
   q <- exp(par[["logq"]])
+
+  # extract data
   year <- data$Year
   C <- data$Catch
   I <- data$Index
+
+  # useful variables
   n <- length(year)
   B <- numeric(n)
+
+  # create population from catch data and model parameters
   B[1] <- Binit
   for (i in 1:(n - 1))
   {
@@ -15,13 +22,15 @@ Schaefer <- function(par, data, verbose = FALSE) {
   }
   Ifit <- q * B
 
+  # get residuals and sums of squares
   res <- log(I) - log(Ifit) # log(I / Ifit)
   RSS <- sum(res^2)
 
-  pars <- c(r = r, K = K, Binit = Binit, q = q)
-  refpts <- c(HRmsy = 0.5 * r, Bmsy = 0.5 * K, MSY = 0.25 * r * K)
-
   if (verbose) {
+    # make useful summaries
+    pars <- c(r = r, K = K, Binit = Binit, q = q)
+    refpts <- c(HRmsy = 0.5 * r, Bmsy = 0.5 * K, MSY = 0.25 * r * K)
+
     list(B = B, HR = C / B, Ifit = Ifit, res = res, pars = pars, refpts = refpts, RSS = RSS)
   } else {
     RSS
@@ -29,7 +38,7 @@ Schaefer <- function(par, data, verbose = FALSE) {
 }
 
 plot_shaefer <- function(fit, data, main) {
-  par(mfrow = c(2, 2))
+  oldpar <- par(mfrow = c(2, 2))
 
   plot(data$Year, fit$Ifit,
     ylim = c(0, max(fit$Ifit)), type = "l", lwd = 4,
@@ -54,6 +63,8 @@ plot_shaefer <- function(fit, data, main) {
     main = paste0(main, ": Residuals")
   )
   abline(h = 0)
+
+  par(oldpar)
 }
 
 ################################################################################
@@ -61,6 +72,7 @@ plot_shaefer <- function(fit, data, main) {
 
 
 haddock <- read.csv("04_Biomass_dynamics/haddock.csv", header=TRUE)
+
 init <-
   c(
     logr = log(1.000),
@@ -73,7 +85,7 @@ Schaefer(par = init, haddock)
 opt <- optim(init, Schaefer, data = haddock)
 opt
 fit <- Schaefer(opt$par, haddock, verbose = TRUE)
-exp(opt$par)
+
 
 plot_shaefer(fit, haddock, main = "Haddock")
 
