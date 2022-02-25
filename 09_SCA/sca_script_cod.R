@@ -40,10 +40,6 @@ optim(par, sca,
 opt2 <- optim(par, sca, data = data, method = "BFGS")
 opt2
 
-opt3 <- optim(par, sca, data = data,
-              method = "BFGS", control = list(maxit = 1000))
-opt3
-
 # or we can use nlminb
 # ?nlminb
 opt4 <- nlminb(par, sca, data = data)
@@ -67,9 +63,7 @@ sapply(opts,
 
 ## final run
 
-run <- optim(par = par, fn = sca, data = data, method = "BFGS",
-             control = list(maxit = 1000), hessian = TRUE)
-
+run <- optim(par = par, fn = sca, data = data, method = "BFGS", hessian = TRUE)
 
 run
 
@@ -103,3 +97,33 @@ Fbar2.4 <- rowMeans(predictions$F[, 2:4])
 plot(Year[-length(Year)], Fbar2.4,
      ylim = c(0, 1.2), yaxs = "i", type  =  "l",
      main = "Fbar (2-4)", ylab = "Average F at ages 2-4")
+
+
+# get some errors out (WARNING, probably not quite right, but here as an example)
+library(MASS)
+Sigma <- solve(2 * run$hessian)
+par_sim <- mvrnorm(1000, run$par, Sigma)
+
+sims <- lapply(1:1000, function(i) sca(par_sim[i,], data, full = TRUE))
+
+Fbar2.4_sim <-
+  sapply(
+    sims,
+    function(x) {
+      rowMeans(x$F[, 2:4])
+    }
+  )
+
+# plot a few curves to see the uncertainty in the relationship
+matplot(Year[-length(Year)], Fbar2.4_sim[, sample(1:ncol(Fbar2.4_sim), 100)],
+  type = "l", lty = 1, col = grey(0.5, alpha = 0.5),
+  ylim = c(0, max(Fbar2.4_sim)), # set y limits
+  main = "Fbar (2-4)", ylab = "Average F at ages 2-4", xlab = "Year"
+)
+
+# overlay fit
+lines(Year[-length(Year)], Fbar2.4, lty = 1, lwd = 2)
+
+# add confidence intervals
+lines(Year[-length(Year)], apply(Fbar2.4_sim, 1, quantile, 0.025), col = "red", lty = 2)
+lines(Year[-length(Year)], apply(Fbar2.4_sim, 1, quantile, 0.975), col = "red", lty = 2)

@@ -9,13 +9,13 @@
 #==============================================================================
 #
 # Use results from VPA assignment to estimate Fmax and F40% for
-# western Atlantic bluefin tuna.
+# northern shelf haddock.
 #
-#   M=0.14
-#   Assume 2007 selectivity pattern from VPA (less influenced by 2013 F assumption).
+#   M=0.2
+#   Assume 2017 selectivity pattern from VPA (less influenced by 2020 F assumption).
 #   Maturity at age 9 (0% mature at ages 1-8, 100% mature at ages 9+; ICCAT 2014)
-#   Growth k=0.089 Linf = 315, t0 = -1.13
-#   Weight = 0.00002861 x Length^2.929
+#   Growth k=0.2 Linf = 70, t0 = 0
+#   Weight = 0.0059 x Length^3.13
 #
 #==============================================================================
 
@@ -24,14 +24,13 @@
 #------------------------------------------------------------------------------
 
 # get vpa function
-source("../06_VPA/vpa_function.R")
+source("06_VPA/vpa_function.R")
 
 # Read catch at age, change units
-catage <- read.table("../06_VPA/bluefin.dat", header=TRUE, check.names=FALSE, row.names=1)
-catage <- catage / 1000
+catage <- read.csv("06_VPA/haddock_catch.csv", header = TRUE, check.names = FALSE, row.names = 1)
 
 # Run model
-vpafit <- vpa(catage, 0.14, 0.1, 5)
+vpafit <- vpa(catage, 0.2, 0.1, 3)
 
 # inspect contents
 str(vpafit)
@@ -53,11 +52,11 @@ Pa <- Pa / max(Pa)
 
 #------------------------------------------------------------------------------
 # (2) Calculate mean lengh at age: La= L∞[1-e-k(a-to)]
-#   Growth k=0.089 Linf = 315, t0 = -1.13
+#   Growth k=0.2 Linf = 70, t0 = 0
 #------------------------------------------------------------------------------
 
 # set up growth parameters
-Linf <- 315; k <- 0.089; t0 <- -1.13
+Linf <- 70; k <- 0.2; t0 <- 0
 
 # calculate mean length at age
 La <- Linf * (1 - exp(-k * (a - t0)))
@@ -302,4 +301,3 @@ plot(Fsteps, results$SPR, type = "b", main = "F40%",
      xlab = "Fishing mortality rate", ylab = "Spawners per recruit", las = 1)
 # a line showing F40
 lines(c(F40, F40), c(0, 0.4 * SPR0), col = "red")
-
