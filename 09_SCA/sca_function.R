@@ -8,6 +8,7 @@
 #' @param data a list of matrices named \code{C}, \code{I}, and \code{M}.
 #'        Alternatively, \code{M} can be a scalar.
 #' @param full whether to return a full list of objects.
+#' @param ssq whether to use sums of squares or maximum likelhood
 #'
 #' @details
 #' The \code{par} vector consists of five blocks:
@@ -42,7 +43,7 @@
 #'
 #' @export
 
-sca <- function(par, data, full=FALSE)
+sca <- function(par, data, full=FALSE, ssq = TRUE)
 {
   ## Get parameters and data
   logNa <- par[grep("logNa", names(par))]
@@ -97,12 +98,19 @@ sca <- function(par, data, full=FALSE)
   ## Evaluate ssq
   Cres <- log(C) - log(Chat)
   Ires <- log(I) - log(Ihat)
-  ssq <- function(res)
-  {
-    #-sum(dnorm(res, sd = sqrt(mean(res^2)), log = TRUE))
-    sum(res^2)
+
+  if (ssq == TRUE) {
+    objective <- function(res) {
+      sum(res^2)
+    }
+  } else {
+    objective <- function(res) {
+      -sum(dnorm(res, sd = sqrt(mean(res^2)), log = TRUE))
+    }
   }
-  f <- c(catch=ssq(Cres), survey=ssq(Ires))
+
+
+  f <- c(catch = objective(Cres), survey = objective(Ires))
 
   ## Prepare output
   if (full) {

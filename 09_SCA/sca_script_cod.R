@@ -61,9 +61,9 @@ sapply(opts,
 
 # lets go with BFGS and maximum iterations of 1000
 
-## final run
+## final run (do it with maximum likelihood)
 
-run <- optim(par = par, fn = sca, data = data, method = "BFGS", hessian = TRUE)
+run <- optim(par = par, fn = sca, data = data, ssq = FALSE, method = "BFGS", hessian = TRUE)
 
 run
 
@@ -99,9 +99,9 @@ plot(Year[-length(Year)], Fbar2.4,
      main = "Fbar (2-4)", ylab = "Average F at ages 2-4")
 
 
-# get some errors out (WARNING, probably not quite right, but here as an example)
+# get some errors out, sometimes called a parametric bootstrap
 library(MASS)
-Sigma <- solve(2 * run$hessian)
+Sigma <- solve(run$hessian)
 par_sim <- mvrnorm(1000, run$par, Sigma)
 
 sims <- lapply(1:1000, function(i) sca(par_sim[i,], data, full = TRUE))
