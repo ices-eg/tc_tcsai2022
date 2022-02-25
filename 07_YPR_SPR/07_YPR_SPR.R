@@ -13,7 +13,7 @@
 #
 #   M=0.2
 #   Assume 2017 selectivity pattern from VPA (less influenced by 2020 F assumption).
-#   Maturity at age 9 (0% mature at ages 1-8, 100% mature at ages 9+; ICCAT 2014)
+#   Knife edge  maturity at age 2 (0% mature at ages 0-1, 100% mature at ages 2+)
 #   Growth k=0.2 Linf = 70, t0 = 0
 #   Weight = 0.0059 x Length^3.13
 #
@@ -45,8 +45,8 @@ a <- 1:20
 Pa <- numeric(20)
 
 # fill in ages 1 to 15
-Pa[1:15] <- vpafit$F["2007",]
-Pa[16:20] <- vpafit$F["2007",15]
+Pa[1:9] <- vpafit$F["2017",]
+Pa[10:20] <- vpafit$F["2017",9]
 # scale
 Pa <- Pa / max(Pa)
 
@@ -63,10 +63,10 @@ La <- Linf * (1 - exp(-k * (a - t0)))
 
 #------------------------------------------------------------------------------
 # (3) Calculate mean weight at age: wa = alpha * L^beta
-#   Weight = 0.00002861 x Length^2.929
+#   Weight = 0.0059 x Length^3.13
 #------------------------------------------------------------------------------
 
-wa <- 0.00002861 * La^2.929
+wa <- 0.0059 * La^3.13
 
 #------------------------------------------------------------------------------
 # (4) Assume an arbitrary number of recruits (N1=R=1000)
@@ -82,14 +82,14 @@ F <- 0
 
 #------------------------------------------------------------------------------
 # (6) Calculate abundance at age: Na+1=Na exp(-(Pa*F + M))
-#     M = 0.14
+#     M = 0.2
 #------------------------------------------------------------------------------
 
 # set up N vector
 Na <- numeric(20)
 
 # define M
-M <- 0.14
+M <- 0.2
 
 # assign age 1 and propagate down the ages
 Na[1] <- R
@@ -129,9 +129,7 @@ YPR <- Y / R
 #------------------------------------------------------------------------------
 
 # set up maturity
-ma <- numeric(20)
-ma[1:8] <- 0
-ma[9:20] <- 1
+ma <- c(0, 0, rep(1,18))
 
 # calculate ssb
 SSB <- sum(Na * ma * wa)
@@ -161,24 +159,26 @@ ypr <- function(F) {
   Na <- numeric(20)
 
   # define M
-  M <- 0.14
+  M <- 0.2
 
   # set up growth parameters
-  Linf <- 315; k <- 0.089; t0 <- -1.13
+  Linf <- 70
+  k <- 0.2
+  t0 <- 0
+
   # weight params
-  alpha <- 0.00002861; beta <- 2.929
+  alpha <- 0.0059
+  beta <- 3.13
 
   # set up maturity
-  ma <- numeric(20)
-  ma[1:8] <- 0
-  ma[9:20] <- 1
+  ma <- c(0, 0, rep(1,18))
 
   # now the modelling:
   #-----------------------------------------------------
 
   # (1) Calculate partial recruitment for ages 1 to 20: Pa=Fa/Ffull, assuming P16+=P15
-  Pa[1:15] <- vpafit$F["2007",]
-  Pa[16:20] <- vpafit$F["2007",15]
+  Pa[1:9] <- vpafit$F["2017",]
+  Pa[10:20] <- vpafit$F["2017",9]
   # scale
   Pa <- Pa / max(Pa)
 
@@ -239,7 +239,7 @@ ypr(0.1)
 
 # set up all the Fs we want to try
 ?seq
-Fsteps <- seq(0, 1, by = 0.1)
+Fsteps <- seq(0, 1, length = 100)
 
 # calculate YPR and SPR for each F
 results <- sapply(Fsteps, ypr)
@@ -291,13 +291,13 @@ abline(h = Fmax, col = "blue")
 #------------------------------------------------------------------------------
 
 # use linear interpolation to get the value of F when SPR is 0.4 SPR when F = 0
-results
 SPR0 <- results$SPR[results$Fsteps==0.0]
 apprx <- approx(results$SPR, Fsteps, xout = 0.4 * SPR0)
 F40 <- apprx$y
 
 # spr plot
-plot(Fsteps, results$SPR, type = "b", main = "F40%",
+plot(Fsteps, results$SPR, type = "b", main = "F40% and Fmax",
      xlab = "Fishing mortality rate", ylab = "Spawners per recruit", las = 1)
 # a line showing F40
 lines(c(F40, F40), c(0, 0.4 * SPR0), col = "red")
+abline(v = Fmax, col="blue")
