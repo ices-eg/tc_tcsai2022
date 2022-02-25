@@ -32,23 +32,18 @@ catage <- read.csv("06_VPA/haddock_catch.csv", header = TRUE, check.names = FALS
 # Run model
 vpafit <- vpa(catage, 0.2, 0.1, 3)
 
-# inspect contents
-str(vpafit)
 
+# but actually, we will use the results from the calibrated VPA which you haven
+# in your spreadsheets
+Fa <- c(0.025, 0.076, 0.327, 0.238, 0.465, 0.255, 0.058, 0.040, 0.118)
+ages <- 0:8
 
 #------------------------------------------------------------------------------
 # (1) Calculate partial recruitment for ages 1 to 20: Pa=Fa/Ffull, assuming P16+=P15
 #------------------------------------------------------------------------------
 
-# create a container for partial F
-a <- 1:20
-Pa <- numeric(20)
-
-# fill in ages 1 to 15
-Pa[1:9] <- vpafit$F["2017",]
-Pa[10:20] <- vpafit$F["2017",9]
-# scale
-Pa <- Pa / max(Pa)
+# Calculate the F pattern
+Pa <- Fa / max(Fa)
 
 #------------------------------------------------------------------------------
 # (2) Calculate mean lengh at age: La= L∞[1-e-k(a-to)]
@@ -59,7 +54,7 @@ Pa <- Pa / max(Pa)
 Linf <- 70; k <- 0.2; t0 <- 0
 
 # calculate mean length at age
-La <- Linf * (1 - exp(-k * (a - t0)))
+La <- Linf * (1 - exp(-k * (ages - t0)))
 
 #------------------------------------------------------------------------------
 # (3) Calculate mean weight at age: wa = alpha * L^beta
@@ -86,7 +81,7 @@ F <- 0
 #------------------------------------------------------------------------------
 
 # set up N vector
-Na <- numeric(20)
+Na <- numeric(length(Fa))
 
 # define M
 M <- 0.2
@@ -98,7 +93,7 @@ for(i in seq_along(Na)[-1]) {
 }
 
 # have a quick peek
-plot(a, Na, type = "b", ylim=c(0,1000),
+plot(ages, Na, type = "b", ylim=c(0,1000),
      main = "Population when F=0 (no fishing)")
 
 #------------------------------------------------------------------------------
@@ -129,7 +124,7 @@ YPR <- Y / R
 #------------------------------------------------------------------------------
 
 # set up maturity
-ma <- c(0, 0, rep(1,18))
+ma <- c(0, 0, 0, rep(1,length(Fa)-3))
 
 # calculate ssb
 SSB <- sum(Na * ma * wa)
@@ -150,13 +145,12 @@ SPR <- SSB / R
 #
 #   and we will 'hard code' the other options
 
-ypr <- function(F) {
+ypr <- function(F, full = FALSE) {
 
   # first lets set up all the things we need
   #-----------------------------------------------------
-  a <- 1:20
-  Pa <- numeric(20)
-  Na <- numeric(20)
+  a <- 0:8
+  Na <- numeric(9)
 
   # define M
   M <- 0.2
@@ -171,19 +165,16 @@ ypr <- function(F) {
   beta <- 3.13
 
   # set up maturity
-  ma <- c(0, 0, rep(1,18))
+  ma <- c(0, 0, 0, rep(1,6))
 
   # now the modelling:
   #-----------------------------------------------------
 
   # (1) Calculate partial recruitment for ages 1 to 20: Pa=Fa/Ffull, assuming P16+=P15
-  Pa[1:9] <- vpafit$F["2017",]
-  Pa[10:20] <- vpafit$F["2017",9]
-  # scale
-  Pa <- Pa / max(Pa)
+  Pa <- Fa / max(Fa)
 
   # (2) Calculate mean lengh at age: La= L∞[1-e-k(a-to)]
-  La <- Linf * (1 - exp(-k * (a - t0)))
+  La <- Linf * (1 - exp(-k * (ages - t0)))
 
   # (3) Calculate mean weight at age: wa = alpha * L^beta
   wa <- alpha * La^beta
@@ -217,14 +208,19 @@ ypr <- function(F) {
   # format the results and return
   out <- c(YPR, SPR)
   names(out) <- c("YPR", "SPR")
-  out
+
+  if (full) {
+    list(Na = Na, Ca = Ca, YPR = YPR, SPR = SPR)
+  } else {
+    out
+  }
 }
 
 
 # test the function
-ypr(F=0)
+ypr(F=0, TRUE)
 
-# should be the same as:
+# should be the same results as:
 c(YPR, SPR)
 
 #------------------------------------------------------------------------------
@@ -239,7 +235,7 @@ ypr(0.1)
 
 # set up all the Fs we want to try
 ?seq
-Fsteps <- seq(0, 1, length = 100)
+Fsteps <- seq(0, 1, by = 0.1)
 
 # calculate YPR and SPR for each F
 results <- sapply(Fsteps, ypr)
@@ -276,18 +272,9 @@ ypr_optim(1)
 opt <- optimize(ypr_optim, interval = c(0,1), maximum = TRUE)
 Fmax <- opt$maximum
 
-#------------------------------------------------------------------------------
-# (17) According to the VPA results and the YPR results, what was the
-# status of the tuna fishery in 2007?
-#------------------------------------------------------------------------------
-
-plot(as.integer(rownames(vpafit$F)), vpafit$F[,3], type = "l",
-     main = "Fmax", xlab="Year", ylab="Fishing mortality rate")
-abline(h = Fmax, col = "blue")
-
 
 #------------------------------------------------------------------------------
-# (18) Extra Credit: What is F40%?
+# Extra Credit: What is F40%?
 #------------------------------------------------------------------------------
 
 # use linear interpolation to get the value of F when SPR is 0.4 SPR when F = 0
@@ -301,3 +288,5 @@ plot(Fsteps, results$SPR, type = "b", main = "F40% and Fmax",
 # a line showing F40
 lines(c(F40, F40), c(0, 0.4 * SPR0), col = "red")
 abline(v = Fmax, col="blue")
+
+round(c(Fmax = Fmax, F40 = F40), 3)
