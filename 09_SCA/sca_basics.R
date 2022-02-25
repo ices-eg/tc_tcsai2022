@@ -1,9 +1,9 @@
 ## Read data
-C <- as.matrix(read.table("nscod_catage.dat", header=TRUE,
+C <- as.matrix(read.table("09_SCA/nscod_catage.dat", header=TRUE,
                           check.names=FALSE, row.names=1))
-I <- as.matrix(read.table("nscod_survey.dat", header=TRUE,
+I <- as.matrix(read.table("09_SCA/nscod_survey.dat", header=TRUE,
                           check.names=FALSE, row.names=1))
-M <- as.matrix(read.table("nscod_natmort.dat", header=TRUE,
+M <- as.matrix(read.table("09_SCA/nscod_natmort.dat", header=TRUE,
                           check.names=FALSE, row.names=1))
 
 minYear <- min(as.integer(rownames(C)))

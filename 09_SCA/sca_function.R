@@ -105,11 +105,15 @@ sca <- function(par, data, full=FALSE)
   f <- c(catch=ssq(Cres), survey=ssq(Ires))
 
   ## Prepare output
-  if(full)
-    out <- list(par=par, C=C, I=I, M=M, N=N, F=F, Z=Z, Chat=Chat, Ihat=Ihat,
-                Cres=Cres, Ires=Ires, f=f)
-  else
+  if (full) {
+    out <-
+      list(
+        par = par, C = C, I = I, M = M, N = N, F = F, Z = Z, Chat = Chat, Ihat = Ihat,
+        Cres = Cres, Ires = Ires, f = f
+      )
+  } else {
     out <- sum(f)
+  }
 
   out
 }

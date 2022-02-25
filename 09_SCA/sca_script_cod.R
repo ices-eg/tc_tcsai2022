@@ -1,21 +1,14 @@
-source("sca_function.R")
+source("09_SCA/sca_function.R")
 
 ## Read data
-
-library(dplyr)
-
 C <-
-  read.table("nscod_catage.dat",
+  as.matrix(read.table("09_SCA/nscod_catage.dat",
     header = TRUE,
     check.names = FALSE, row.names = 1
-  ) %>%
-  tibble()
-
-
-
-I <- as.matrix(read.table("nscod_survey.dat", header = TRUE,
+  ))
+I <- as.matrix(read.table("09_SCA/nscod_survey.dat", header = TRUE,
                           check.names = FALSE, row.names = 1))
-M <- as.matrix(read.table("nscod_natmort.dat", header = TRUE,
+M <- as.matrix(read.table("09_SCA/nscod_natmort.dat", header = TRUE,
                           check.names = FALSE, row.names = 1))
 data <- list(C = C, I = I, M = M)
 
@@ -37,6 +30,12 @@ sca(par, data)
 
 opt1 <- optim(par, sca, data = data)
 opt1
+
+optim(par, sca,
+  data = data,
+  control = list(maxit = 1000)
+)
+
 
 opt2 <- optim(par, sca, data = data, method = "BFGS")
 opt2
