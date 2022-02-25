@@ -61,6 +61,7 @@ Ires <- log(I) - log(Ihat)
 ## Evaluate SSQ
 ssq <- function(res)
 {
+  # if you want to switch to max likelihood
   #-sum(dnorm(res, sd=sqrt(mean(res^2)), log=TRUE))
   sum(res^2)
 }
