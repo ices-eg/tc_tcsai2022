@@ -114,7 +114,7 @@ Fbar2.4_sim <-
     }
   )
 
-# plot a few curves to see the uncertainty in the relationship
+# plot a few curves to see the uncertainty in the estimate
 matplot(Year[-length(Year)], Fbar2.4_sim[, sample(1:ncol(Fbar2.4_sim), 100)],
   type = "l", lty = 1, col = grey(0.5, alpha = 0.5),
   ylim = c(0, max(Fbar2.4_sim)), # set y limits
